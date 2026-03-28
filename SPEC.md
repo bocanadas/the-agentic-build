@@ -63,7 +63,7 @@ The question bank should be a JSON file using the format below:
   ]
 }`
 
-File structure:
+# File structure:
 - main.py: This file should handle the main quiz logic and print outputs to the user's CLI
 - questions.json: This file should house the question bank and all metadata related to the question
 - users.db: This SQLite datebase handle the local login system logic. Hold the password and username of the app's users
@@ -71,15 +71,14 @@ File structure:
 - scores.json: This file tracks per-user history and stats
 - README.md: This file should be a simple breakdown of what the CLI app is and how to make it work
 
-Error handling: 
+# Error handling: 
 - What happens if the JSON file is missing? Handle the error gracefully and make it clear to the user what is wrong and how to fix it
 - If the user enters invalid input? Direct the user to input valid input and add examples be concise dont take up too much UI space. 
 - If the user terminate the app with control + c on mac or windows equivalent make sure to add a message and say goodbye if possible.
 - if the user quits in the middle of a quiz dont save it and dont count it.
 - if the user enters the wrong password or username let them know it's invalid.
 
-
-Required features:
+# Required features:
 - A local login system that prompts users for a username and password (or allows them to enter a new username and password). The passwords should not be easily discoverable.
 - A score history file that tracks performance and other useful statistics over time for each user. This file should not be human-readable and should be relatively secure. (This means someone could look at the file and perhaps find out usernames but not passwords or scores.)
 - Users should somehow be able to provide feedback on whether they like a question or not, and this should inform what questions they get next.
@@ -89,7 +88,7 @@ Required features:
 - I would like the options and the general interface to be well formatted for human interaction.
 - Difficulty levels that affect scoring
 
-Acceptance criteria:
+# Acceptance criteria:
 - Running the app with an empty question bank prints a friendly error and directs the user to the correct screen.
 - The user can login and start a quiz and then return to the main screen and see their updated stats
 - The user's feedback is implemented and taken into account for future quiz questions
@@ -97,16 +96,3 @@ Acceptance criteria:
 - Running the app and logging in into an account that doesn't exist prompts and error message that states your account does not exist and prompt you to make one
 - A quiz with a hard question/s should have a higher score than one that didn't include any hard/s.
 - Creating an account with a username that already exists gives an error and doesn't overwrite the old account
-
-
-
-
-
-
-
-
-
-
-
-
-
