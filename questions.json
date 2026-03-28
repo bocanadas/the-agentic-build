@@ -1,0 +1,261 @@
+{
+  "questions": [
+    {
+      "question": "What keyword is used to define a function in Python?",
+      "type": "multiple_choice",
+      "options": ["func", "define", "def", "function"],
+      "answer": "def",
+      "category": "Python Basics",
+      "difficulty": "easy",
+      "explanation": "In Python, 'def' is the keyword used to declare a function.",
+      "wrong_explanations": {
+        "func": "'func' is not a Python keyword. Some other languages use 'func' but Python uses 'def'.",
+        "define": "'define' is not a Python keyword. It is used in some other languages like Scheme.",
+        "function": "'function' is used in JavaScript, not Python. Python uses 'def' instead."
+      }
+    },
+    {
+      "question": "A list in Python is immutable.",
+      "type": "true_false",
+      "answer": "false",
+      "category": "Data Structures",
+      "difficulty": "easy",
+      "explanation": "Lists in Python are mutable. You can change, add, and remove elements after creation.",
+      "wrong_explanations": {
+        "true": "Lists are mutable, not immutable. Tuples are the immutable equivalent of lists."
+      }
+    },
+    {
+      "question": "What built-in function returns the number of items in a list?",
+      "type": "short_answer",
+      "answer": "len",
+      "category": "Python Basics",
+      "difficulty": "easy",
+      "explanation": "The built-in len() function returns the number of items in any container such as a list, tuple, string, or dictionary.",
+      "wrong_explanation": "The correct answer is len(). Python uses short, readable names for built-in functions."
+    },
+    {
+      "question": "What is the time complexity of looking up a key in a Python dictionary?",
+      "type": "multiple_choice",
+      "options": ["O(n)", "O(log n)", "O(1)", "O(n^2)"],
+      "answer": "O(1)",
+      "category": "Data Structures",
+      "difficulty": "medium",
+      "explanation": "Python dictionaries use hash tables, providing average-case O(1) time complexity for key lookups.",
+      "wrong_explanations": {
+        "O(n)": "O(n) is the worst case for a hash collision, but the average case for dictionary lookup is O(1).",
+        "O(log n)": "O(log n) applies to balanced binary search trees, not hash-based dictionaries.",
+        "O(n^2)": "O(n^2) is far too slow for dictionary lookups. Hash tables provide O(1) average-case access."
+      }
+    },
+    {
+      "question": "In Python, a decorator is a function that takes another function as an argument and extends its behavior without modifying it.",
+      "type": "true_false",
+      "answer": "true",
+      "category": "Advanced Python",
+      "difficulty": "hard",
+      "explanation": "Decorators wrap a function to extend or modify its behavior without changing its source code. They are applied using the @decorator syntax.",
+      "wrong_explanations": {
+        "false": "This statement is true. Decorators are a core Python pattern that takes a function, adds functionality, and returns a modified function."
+      }
+    },
+    {
+      "question": "Which of the following is NOT a valid Python data type?",
+      "type": "multiple_choice",
+      "options": ["int", "float", "char", "str"],
+      "answer": "char",
+      "category": "Python Basics",
+      "difficulty": "easy",
+      "explanation": "Python does not have a 'char' type. Single characters are represented as strings of length 1.",
+      "wrong_explanations": {
+        "int": "'int' is a valid Python data type used for whole numbers like 1, 42, or -7.",
+        "float": "'float' is a valid Python data type used for decimal numbers like 3.14 or -0.5.",
+        "str": "'str' is a valid Python data type used for text such as 'hello' or \"world\"."
+      }
+    },
+    {
+      "question": "What is the output of: print(type([]))?",
+      "type": "multiple_choice",
+      "options": ["<class 'tuple'>", "<class 'list'>", "<class 'dict'>", "<class 'set'>"],
+      "answer": "<class 'list'>",
+      "category": "Python Basics",
+      "difficulty": "easy",
+      "explanation": "Square brackets [] create an empty list, so type([]) returns <class 'list'>.",
+      "wrong_explanations": {
+        "<class 'tuple'>": "Tuples are created with parentheses () not square brackets []. [] creates a list.",
+        "<class 'dict'>": "Dictionaries are created with curly braces {} and key-value pairs, not [].",
+        "<class 'set'>": "Sets are created with curly braces {} and values, or set(). [] creates a list."
+      }
+    },
+    {
+      "question": "A tuple in Python is mutable.",
+      "type": "true_false",
+      "answer": "false",
+      "category": "Data Structures",
+      "difficulty": "easy",
+      "explanation": "Tuples are immutable in Python. Once created, their elements cannot be changed, added, or removed.",
+      "wrong_explanations": {
+        "true": "Tuples are immutable, not mutable. If you need a mutable sequence, use a list instead."
+      }
+    },
+    {
+      "question": "Which method is used to add an element to the end of a list?",
+      "type": "multiple_choice",
+      "options": ["add()", "append()", "insert()", "push()"],
+      "answer": "append()",
+      "category": "Python Basics",
+      "difficulty": "easy",
+      "explanation": "The append() method adds a single element to the end of a list.",
+      "wrong_explanations": {
+        "add()": "add() is used with sets, not lists. Lists use append() to add elements to the end.",
+        "insert()": "insert() adds an element at a specific index, not necessarily at the end. append() adds to the end.",
+        "push()": "push() is not a Python list method. It is commonly used in JavaScript. Python uses append()."
+      }
+    },
+    {
+      "question": "What does the 'self' parameter refer to in a Python class method?",
+      "type": "multiple_choice",
+      "options": ["The class itself", "The current instance of the class", "The parent class", "A global variable"],
+      "answer": "The current instance of the class",
+      "category": "Object-Oriented Python",
+      "difficulty": "medium",
+      "explanation": "'self' refers to the current instance of the class, allowing access to its attributes and methods.",
+      "wrong_explanations": {
+        "The class itself": "'self' refers to the instance, not the class. To refer to the class itself, use 'cls' in a classmethod.",
+        "The parent class": "To refer to the parent class, use super(). 'self' refers to the current instance.",
+        "A global variable": "'self' is not a global variable. It is a reference to the specific object calling the method."
+      }
+    },
+    {
+      "question": "What is the correct way to handle exceptions in Python?",
+      "type": "multiple_choice",
+      "options": ["if/else", "try/except", "do/catch", "handle/error"],
+      "answer": "try/except",
+      "category": "Python Basics",
+      "difficulty": "medium",
+      "explanation": "Python uses try/except blocks for exception handling. Code that might raise an exception goes in the try block, and error handling goes in the except block.",
+      "wrong_explanations": {
+        "if/else": "if/else is for conditional logic, not exception handling. Use try/except for catching errors.",
+        "do/catch": "do/catch is used in languages like Swift and Kotlin. Python uses try/except.",
+        "handle/error": "handle/error is not a valid Python construct. Python uses try/except for exception handling."
+      }
+    },
+    {
+      "question": "What does the '==' operator check compared to 'is' in Python?",
+      "type": "multiple_choice",
+      "options": ["They are identical", "'==' checks value equality, 'is' checks identity", "'==' checks type, 'is' checks value", "'is' is not valid Python syntax"],
+      "answer": "'==' checks value equality, 'is' checks identity",
+      "category": "Python Basics",
+      "difficulty": "medium",
+      "explanation": "'==' compares the values of two objects, while 'is' checks whether they are the exact same object in memory.",
+      "wrong_explanations": {
+        "They are identical": "They are not identical. '==' checks if values are equal, while 'is' checks if both variables point to the same object.",
+        "'==' checks type, 'is' checks value": "This is reversed and incorrect. '==' checks value equality, 'is' checks object identity in memory.",
+        "'is' is not valid Python syntax": "'is' is a valid Python keyword used for identity comparison, e.g., 'x is None'."
+      }
+    },
+    {
+      "question": "Which keyword is used to create a generator function in Python?",
+      "type": "multiple_choice",
+      "options": ["generate", "return", "yield", "async"],
+      "answer": "yield",
+      "category": "Advanced Python",
+      "difficulty": "hard",
+      "explanation": "The 'yield' keyword turns a regular function into a generator. It produces values one at a time, pausing between each.",
+      "wrong_explanations": {
+        "generate": "'generate' is not a Python keyword. Generators are created using the 'yield' keyword.",
+        "return": "'return' ends a function and sends back a value. 'yield' pauses a generator and can be resumed.",
+        "async": "'async' is used for asynchronous functions (coroutines), not generators. Use 'yield' for generators."
+      }
+    },
+    {
+      "question": "In Python, strings are immutable.",
+      "type": "true_false",
+      "answer": "true",
+      "category": "Data Structures",
+      "difficulty": "easy",
+      "explanation": "Strings in Python are immutable. Any operation that appears to modify a string actually creates a new string object.",
+      "wrong_explanations": {
+        "false": "Strings are indeed immutable. You cannot change individual characters of a string. Operations like concatenation create new strings."
+      }
+    },
+    {
+      "question": "Python supports multiple inheritance.",
+      "type": "true_false",
+      "answer": "true",
+      "category": "Object-Oriented Python",
+      "difficulty": "medium",
+      "explanation": "Python supports multiple inheritance, allowing a class to inherit from more than one parent class using the Method Resolution Order (MRO).",
+      "wrong_explanations": {
+        "false": "Python does support multiple inheritance. A class can have multiple base classes, e.g., class C(A, B)."
+      }
+    },
+    {
+      "question": "A lambda function in Python can contain multiple statements.",
+      "type": "true_false",
+      "answer": "false",
+      "category": "Advanced Python",
+      "difficulty": "hard",
+      "explanation": "Lambda functions are limited to a single expression. For multiple statements, define a regular function with 'def'.",
+      "wrong_explanations": {
+        "true": "Lambda functions can only contain a single expression, not multiple statements. Use 'def' for complex logic."
+      }
+    },
+    {
+      "question": "What is the Global Interpreter Lock (GIL) in Python?",
+      "type": "multiple_choice",
+      "options": ["A security feature for imports", "A mutex that prevents multiple threads from executing Python bytecode simultaneously", "A file locking mechanism for concurrent writes", "A memory management garbage collector"],
+      "answer": "A mutex that prevents multiple threads from executing Python bytecode simultaneously",
+      "category": "Advanced Python",
+      "difficulty": "hard",
+      "explanation": "The GIL is a mutex in CPython that allows only one thread to execute Python bytecode at a time, simplifying memory management but limiting true parallelism.",
+      "wrong_explanations": {
+        "A security feature for imports": "The GIL is not related to import security. It is a thread-safety mechanism for CPython's memory management.",
+        "A file locking mechanism for concurrent writes": "The GIL has nothing to do with file locking. It controls thread execution of Python bytecode.",
+        "A memory management garbage collector": "While the GIL helps with memory safety, it is not a garbage collector. Python uses reference counting and a cycle detector for GC."
+      }
+    },
+    {
+      "question": "What is the correct way to create a shallow copy of a list in Python?",
+      "type": "multiple_choice",
+      "options": ["new_list = old_list", "new_list = old_list.copy()", "new_list = old_list.clone()", "new_list = copy(old_list)"],
+      "answer": "new_list = old_list.copy()",
+      "category": "Data Structures",
+      "difficulty": "medium",
+      "explanation": "The .copy() method creates a shallow copy of a list. You can also use slicing: new_list = old_list[:].",
+      "wrong_explanations": {
+        "new_list = old_list": "This creates a reference, not a copy. Both variables point to the same list object.",
+        "new_list = old_list.clone()": ".clone() is not a Python list method. Use .copy() or slicing [:] instead.",
+        "new_list = copy(old_list)": "There is no built-in copy() function. Use the .copy() method or import copy and use copy.copy()."
+      }
+    },
+    {
+      "question": "What does the ** operator do when used with dictionaries in Python 3.5+?",
+      "type": "multiple_choice",
+      "options": ["Raises values to a power", "Unpacks the dictionary", "Creates a deep copy", "Deletes all keys"],
+      "answer": "Unpacks the dictionary",
+      "category": "Advanced Python",
+      "difficulty": "hard",
+      "explanation": "The ** operator unpacks a dictionary into keyword arguments or merges dictionaries, e.g., {**dict1, **dict2}.",
+      "wrong_explanations": {
+        "Raises values to a power": "** is the power operator for numbers, but when used with dictionaries it unpacks key-value pairs.",
+        "Creates a deep copy": "** unpacking creates a new dict with the same references (shallow), not a deep copy.",
+        "Deletes all keys": "** does not delete keys. It unpacks the dictionary's key-value pairs into a new context."
+      }
+    },
+    {
+      "question": "What is the purpose of the __init__ method in a Python class?",
+      "type": "multiple_choice",
+      "options": ["To delete an instance", "To initialize a new instance with attributes", "To import required modules", "To define class-level constants"],
+      "answer": "To initialize a new instance with attributes",
+      "category": "Object-Oriented Python",
+      "difficulty": "medium",
+      "explanation": "__init__ is the constructor method automatically called when a new instance of a class is created. It sets up the object's initial state.",
+      "wrong_explanations": {
+        "To delete an instance": "To handle cleanup when an object is deleted, use __del__. __init__ is for initialization.",
+        "To import required modules": "Imports are done at the module level, not inside __init__. __init__ initializes instance attributes.",
+        "To define class-level constants": "Class-level constants are defined in the class body, not in __init__. __init__ sets instance-specific attributes."
+      }
+    }
+  ]
+}
