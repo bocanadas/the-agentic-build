@@ -29,6 +29,7 @@
       "question": "What built-in function returns the number of items in a list?",
       "type": "short_answer",
       "answer": "len",
+      "alternatives": ["len()"],
       "category": "Python Basics",
       "difficulty": "easy",
       "explanation": "The built-in len() function returns the number of items in any container such as a list, tuple, string, or dictionary.",

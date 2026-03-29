@@ -66,7 +66,8 @@ def _hide_cursor():
 
 
 def _clear():
-    os.system("cls" if os.name == "nt" else "clear")
+    sys.stdout.write("\033[2J\033[H")
+    sys.stdout.flush()
 
 
 # ── Raw key reading ──────────────────────────────────────────────────────────
@@ -387,8 +388,10 @@ def _load_scores():
 
 def _save_scores(data):
     token = _get_fernet().encrypt(json.dumps(data).encode())
-    with open(SCORES_FILE, "wb") as f:
+    tmp = SCORES_FILE + ".tmp"
+    with open(tmp, "wb") as f:
         f.write(token)
+    os.replace(tmp, SCORES_FILE)
 
 
 def _record_score(user, score, mx, correct, wrong, total):
@@ -435,8 +438,10 @@ def _load_fb():
 
 
 def _save_fb(data):
-    with open(FEEDBACK_FILE, "w") as f:
+    tmp = FEEDBACK_FILE + ".tmp"
+    with open(tmp, "w") as f:
         json.dump(data, f, indent=2)
+    os.replace(tmp, FEEDBACK_FILE)
 
 
 def _record_fb(user, question_text, value):
@@ -657,7 +662,9 @@ def _run_quiz(username, quiz_qs):
             user_ans = _safe_input(f"    {_C.WHITE}Your answer: {_C.RST}").strip()
 
         correct_ans = q["answer"]
-        is_correct = (user_ans or "").lower().strip() == correct_ans.lower().strip()
+        accepted = [correct_ans] + q.get("alternatives", [])
+        typed = (user_ans or "").lower().strip()
+        is_correct = any(typed == a.lower().strip() for a in accepted)
 
         # ── Result screen ────────────────────────────────────────────────
         _clear()
@@ -812,9 +819,8 @@ def main():
                     if count is None:
                         continue
 
-                    quiz_qs = _pick(questions, count, username)
-
                     while True:
+                        quiz_qs = _pick(questions, count, username)
                         try:
                             results, _ = _run_quiz(username, quiz_qs)
                         except KeyboardInterrupt:
