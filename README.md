@@ -5,10 +5,11 @@ A command-line Python quiz application with a local login system, score tracking
 ## Quick Start
 
 ```bash
+pip install -r requirements.txt
 python main.py
 ```
 
-No external dependencies are required, the app uses only the Python standard library (Python 3.8+).
+Requires Python 3.8+ and one external dependency (`cryptography`) for AES-encrypted score storage.
 
 ## How It Works
 
@@ -37,7 +38,8 @@ Questions have three difficulty levels that affect point values:
 | `main.py`          | Main application that handles all quiz logic and the CLI interface          |
 | `questions.json`   | Human-readable question bank (edit this to add/change questions)            |
 | `users.db`         | SQLite database storing usernames and hashed passwords (auto-created)       |
-| `scores.json`      | Encoded per-user score history — not human-readable (auto-created)          |
+| `scores.json`      | AES-encrypted per-user score history (auto-created)                         |
+| `.scores.key`      | Fernet encryption key for scores — **do not share or commit** (auto-created)|
 | `feedback.json`    | Per-user question feedback used to personalize future quizzes (auto-created)|
 
 ## Question Format

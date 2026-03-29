@@ -1,0 +1,5 @@
+users.db
+scores.json
+feedback.json
+.scores.key
+__pycache__/

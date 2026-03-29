@@ -9,9 +9,8 @@ import sqlite3
 import hashlib
 import secrets
 import random
-import base64
-import zlib
 from datetime import datetime
+from cryptography.fernet import Fernet
 from getpass import getpass
 
 try:
@@ -33,6 +32,7 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 QUESTIONS_FILE = os.path.join(_DIR, "questions.json")
 FEEDBACK_FILE = os.path.join(_DIR, "feedback.json")
 SCORES_FILE = os.path.join(_DIR, "scores.json")
+SCORES_KEY_FILE = os.path.join(_DIR, ".scores.key")
 DB_FILE = os.path.join(_DIR, "users.db")
 
 DIFF_PTS = {"easy": 1, "medium": 2, "hard": 3}
@@ -266,10 +266,25 @@ def _init_db():
     conn.close()
 
 
+_PBKDF2_ITERATIONS = 600_000
+
 def _hash_pw(pw, salt=None):
     if salt is None:
         salt = secrets.token_hex(16)
-    return hashlib.sha256((salt + pw).encode()).hexdigest(), salt
+    h = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt.encode(), _PBKDF2_ITERATIONS)
+    return h.hex(), salt
+
+
+def _check_password(pw):
+    if len(pw) < 8:
+        return "Password must be at least 8 characters."
+    if not any(c.isupper() for c in pw):
+        return "Password must include at least 1 uppercase letter."
+    if not any(c.islower() for c in pw):
+        return "Password must include at least 1 lowercase letter."
+    if not any(c.isdigit() for c in pw):
+        return "Password must include at least 1 digit."
+    return None
 
 
 def _db_create(username, password):
@@ -345,33 +360,35 @@ def _pick(questions, count, username):
     return chosen
 
 
-# ── Scores (encoded: base64 + zlib) ─────────────────────────────────────────
+# ── Scores (Fernet AES encryption) ──────────────────────────────────────────
 
-def _enc(data):
-    return base64.b64encode(zlib.compress(json.dumps(data).encode())).decode()
-
-
-def _dec(text):
-    try:
-        return json.loads(zlib.decompress(base64.b64decode(text.encode())).decode())
-    except Exception:
-        return {}
+def _get_fernet():
+    if os.path.exists(SCORES_KEY_FILE):
+        with open(SCORES_KEY_FILE, "rb") as f:
+            key = f.read().strip()
+    else:
+        key = Fernet.generate_key()
+        with open(SCORES_KEY_FILE, "wb") as f:
+            f.write(key)
+    return Fernet(key)
 
 
 def _load_scores():
     if not os.path.exists(SCORES_FILE):
         return {}
     try:
-        with open(SCORES_FILE, "r") as f:
-            c = f.read().strip()
-        return _dec(c) if c else {}
+        with open(SCORES_FILE, "rb") as f:
+            token = f.read()
+        plaintext = _get_fernet().decrypt(token)
+        return json.loads(plaintext)
     except Exception:
         return {}
 
 
 def _save_scores(data):
-    with open(SCORES_FILE, "w") as f:
-        f.write(_enc(data))
+    token = _get_fernet().encrypt(json.dumps(data).encode())
+    with open(SCORES_FILE, "wb") as f:
+        f.write(token)
 
 
 def _record_score(user, score, mx, correct, wrong, total):
@@ -516,9 +533,12 @@ def _screen_create(prefill=None):
             _wait()
             return None
 
+    print(f"  {_C.DIM}Min 8 chars, 1 uppercase, 1 lowercase, 1 digit{_C.RST}")
     password = _masked_input(f"  {_C.WHITE}Password: {_C.RST}")
-    if not password:
-        print(f"\n  {_C.RED}Password cannot be empty.{_C.RST}")
+
+    pw_err = _check_password(password)
+    if pw_err:
+        print(f"\n  {_C.RED}{pw_err}{_C.RST}")
         _wait()
         return None
 

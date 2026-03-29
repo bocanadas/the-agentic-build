@@ -216,4 +216,24 @@ Lines 500–502: returning `None` kicks the user back to the "Log In / Create Ac
 | 26 | **WARN** | No "back" option from input prompts |
 | 27 | **WARN** | Wrong password kicks back to main menu |
 
-**Bottom line:** All 7 acceptance criteria **pass**. The two **FAIL** items are both git hygiene issues — no `.gitignore` and an already-committed `__pycache__` — meaning sensitive user data (`users.db` with password hashes) would be pushed to a public repo. The 10 **WARN** items are a mix of security hardening, code quality, and UX polish that would strengthen the project but are not spec violations.
+**Bottom line:** All 7 acceptance criteria **pass**. The two **FAIL** items are both git hygiene issues — no `.gitignore` and an already-committed `__pycache__` — meaning sensitive user data (`users.db` with password hashes) would be pushed to a public repo. The 10 **WARN** items are a mix of security hardening, code quality, and UX polish that would strengthen the project but aren't spec violations.
+
+---
+
+## Fixes Log
+
+### Fixed using Claude Opus & Sonnet
+
+The following issues from the review were addressed after the initial review was written.
+
+| # | Original Verdict | Fix |
+|---|-----------------|-----|
+| 8 | **FAIL** | `.gitignore` created covering `users.db`, `scores.json`, `feedback.json`, `.scores.key`, and `__pycache__/` |
+| 9 | **FAIL** | `git rm -r --cached __pycache__/` removed the bytecode file from git tracking (file stays on disk) |
+| 10 | **WARN** | Replaced `base64 + zlib` obfuscation with `cryptography.Fernet` (AES-128-CBC + HMAC). A random key is auto-generated on first run and saved to `.scores.key` — also added to `.gitignore` |
+| 11 | **WARN** | Replaced `hashlib.sha256` single-pass with `hashlib.pbkdf2_hmac("sha256", ...)` at 600,000 iterations (OWASP 2023 recommendation). stdlib-only, no new dependency |
+| 12 | **WARN** | Added `_check_password()` enforcing min 8 chars, 1 uppercase, 1 lowercase, 1 digit. Requirements shown as a hint before the password prompt |
+
+`requirements.txt` was created with the `cryptography` dependency. `README.md` was updated to include the `pip install -r requirements.txt` step and document the new `.scores.key` file.
+
+**Note:** Because the password hashing algorithm changed (#11), any accounts created before this fix will fail to verify. Delete `users.db` to start fresh. Similarly, delete `scores.json` if it exists — the old format is not readable by the new Fernet decryptor.
