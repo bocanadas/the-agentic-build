@@ -35,12 +35,13 @@ SCORES_FILE = os.path.join(_DIR, "scores.json")
 SCORES_KEY_FILE = os.path.join(_DIR, ".scores.key")
 DB_FILE = os.path.join(_DIR, "users.db")
 
-DIFF_PTS = {"easy": 1, "medium": 2, "hard": 3}
+DIFFICULTY_POINTS = {"easy": 1, "medium": 2, "hard": 3}
 
 
 # ── ANSI helpers ─────────────────────────────────────────────────────────────
 
 class _Style:
+    """ANSI escape codes for terminal text formatting."""
     RST = "\033[0m"
     BOLD = "\033[1m"
     DIM = "\033[2m"
@@ -56,16 +57,19 @@ _SHOW_CUR = "\033[?25h"
 
 
 def _show_cursor():
+    """Make the terminal cursor visible again."""
     sys.stdout.write(_SHOW_CUR)
     sys.stdout.flush()
 
 
 def _hide_cursor():
+    """Hide the terminal cursor (used during arrow-key menus)."""
     sys.stdout.write(_HIDE_CUR)
     sys.stdout.flush()
 
 
 def _clear():
+    """Clear the terminal screen and move the cursor to the top-left."""
     sys.stdout.write("\033[2J\033[H")
     sys.stdout.flush()
 
@@ -73,37 +77,42 @@ def _clear():
 # ── Raw key reading ──────────────────────────────────────────────────────────
 
 def _get_key():
+    """Read a single keypress and return a friendly name like "up", "down", "enter", etc.
+
+    Works on macOS/Linux (termios) and Windows (msvcrt). Arrow keys send
+    multi-byte escape sequences which are decoded here into simple strings.
+    """
     if _HAS_TERMIOS:
         fd = sys.stdin.fileno()
-        old = termios.tcgetattr(fd)
+        old_settings = termios.tcgetattr(fd)
         try:
             tty.setraw(fd)
             ch = sys.stdin.read(1)
-            if ch == "\x1b":
-                c2 = sys.stdin.read(1)
-                if c2 == "[":
-                    c3 = sys.stdin.read(1)
-                    return {"A": "up", "B": "down"}.get(c3, "unknown")
+            if ch == "\x1b":                    # Escape — start of arrow key sequence
+                ch2 = sys.stdin.read(1)
+                if ch2 == "[":                  # Arrow keys send: ESC [ A/B/C/D
+                    ch3 = sys.stdin.read(1)
+                    return {"A": "up", "B": "down"}.get(ch3, "unknown")
                 return "escape"
             if ch in ("\r", "\n"):
                 return "enter"
             if ch == " ":
                 return "space"
-            if ch == "\x03":
+            if ch == "\x03":                    # Ctrl+C
                 return "ctrl_c"
             return ch
         finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old)
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     elif _HAS_MSVCRT:
         ch = msvcrt.getch()
-        if ch in (b"\x00", b"\xe0"):
-            c2 = msvcrt.getch()
-            return {b"H": "up", b"P": "down"}.get(c2, "unknown")
+        if ch in (b"\x00", b"\xe0"):           # Special key prefix on Windows
+            ch2 = msvcrt.getch()
+            return {b"H": "up", b"P": "down"}.get(ch2, "unknown")
         if ch == b"\r":
             return "enter"
         if ch == b" ":
             return "space"
-        if ch == b"\x03":
+        if ch == b"\x03":                       # Ctrl+C
             return "ctrl_c"
         return ch.decode("utf-8", errors="replace")
     return input()
@@ -188,6 +197,7 @@ def _fullscreen_menu(options, header_lines=None, selected=0):
 
 
 def _safe_input(prompt):
+    """Wrapper around input() that converts EOF (e.g. piped input ending) into KeyboardInterrupt."""
     try:
         return input(prompt)
     except EOFError:
@@ -195,50 +205,56 @@ def _safe_input(prompt):
 
 
 def _masked_input(prompt):
-    """Password field that prints bullet characters."""
+    """Password input that shows bullet characters instead of the actual text.
+
+    On macOS/Linux, reads raw keypresses and prints a bullet for each character.
+    On Windows, falls back to Python's built-in getpass() which hides input entirely.
+    """
     if _HAS_TERMIOS:
         sys.stdout.write(prompt)
         sys.stdout.flush()
         fd = sys.stdin.fileno()
-        old = termios.tcgetattr(fd)
+        old_settings = termios.tcgetattr(fd)
         try:
             tty.setraw(fd)
-            buf: list[str] = []
+            chars: list[str] = []
             while True:
                 ch = sys.stdin.read(1)
                 if ch in ("\r", "\n"):
                     sys.stdout.write("\n")
                     break
-                elif ch in ("\x7f", "\x08"):
-                    if buf:
-                        buf.pop()
+                elif ch in ("\x7f", "\x08"):    # Backspace / Delete
+                    if chars:
+                        chars.pop()
                         sys.stdout.write("\b \b")
-                elif ch == "\x03":
+                elif ch == "\x03":              # Ctrl+C
                     sys.stdout.write("\n")
-                    termios.tcsetattr(fd, termios.TCSADRAIN, old)
+                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
                     raise KeyboardInterrupt
-                elif ord(ch) >= 32:
-                    buf.append(ch)
+                elif ord(ch) >= 32:             # Printable character
+                    chars.append(ch)
                     sys.stdout.write("\u2022")
                 sys.stdout.flush()
-            return "".join(buf)
+            return "".join(chars)
         finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old)
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     else:
         return getpass(prompt)
 
 
 def _wait(msg="Press Enter or Space to continue\u2026"):
+    """Pause and wait for the user to press Enter or Space before continuing."""
     print(f"\n  {_Style.GRAY}{msg}{_Style.RST}")
     while True:
-        k = _get_key()
-        if k in ("enter", "space"):
+        key = _get_key()
+        if key in ("enter", "space"):
             return
-        if k == "ctrl_c":
+        if key == "ctrl_c":
             raise KeyboardInterrupt
 
 
 def _header(title):
+    """Print a centered title inside a decorative box border."""
     width = max(len(title) + 6, 40)
     pad_left = (width - len(title)) // 2
     pad_right = width - pad_left - len(title)
@@ -248,12 +264,14 @@ def _header(title):
 
 
 def _divider():
+    """Print a thin horizontal line to visually separate sections."""
     print(f"  {_Style.DIM}{'\u2500' * 44}{_Style.RST}")
 
 
 # ── Database (users) ─────────────────────────────────────────────────────────
 
 def _init_db():
+    """Create the users table in the SQLite database if it doesn't already exist."""
     conn = sqlite3.connect(DB_FILE)
     conn.execute(
         "CREATE TABLE IF NOT EXISTS users ("
@@ -269,26 +287,33 @@ def _init_db():
 
 _PBKDF2_ITERATIONS = 600_000
 
-def _hash_password(pw, salt=None):
+def _hash_password(password, salt=None):
+    """Hash a password using PBKDF2 with a random salt. Returns (hash_hex, salt).
+
+    If no salt is provided, a new random one is generated. When verifying a
+    password, pass in the stored salt to reproduce the same hash.
+    """
     if salt is None:
         salt = secrets.token_hex(16)
-    h = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt.encode(), _PBKDF2_ITERATIONS)
-    return h.hex(), salt
+    hash_bytes = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), _PBKDF2_ITERATIONS)
+    return hash_bytes.hex(), salt
 
 
-def _check_password(pw):
-    if len(pw) < 8:
+def _check_password(password):
+    """Validate password strength. Returns an error message string, or None if valid."""
+    if len(password) < 8:
         return "Password must be at least 8 characters."
-    if not any(c.isupper() for c in pw):
+    if not any(c.isupper() for c in password):
         return "Password must include at least 1 uppercase letter."
-    if not any(c.islower() for c in pw):
+    if not any(c.islower() for c in password):
         return "Password must include at least 1 lowercase letter."
-    if not any(c.isdigit() for c in pw):
+    if not any(c.isdigit() for c in password):
         return "Password must include at least 1 digit."
     return None
 
 
 def _db_create(username, password):
+    """Insert a new user into the database. Returns (success: bool, message: str)."""
     conn = sqlite3.connect(DB_FILE)
     try:
         pw_hash, salt = _hash_password(password)
@@ -305,6 +330,11 @@ def _db_create(username, password):
 
 
 def _db_verify(username, password):
+    """Check username/password against the database. Returns (success, error_code).
+
+    error_code is "ok" on success, "not_found" if the user doesn't exist,
+    or "wrong_pw" if the password doesn't match.
+    """
     conn = sqlite3.connect(DB_FILE)
     row = conn.execute(
         "SELECT password_hash, salt FROM users WHERE username=?", (username,)
@@ -319,6 +349,11 @@ def _db_verify(username, password):
 # ── Questions ────────────────────────────────────────────────────────────────
 
 def _load_questions():
+    """Load the question bank from questions.json. Returns (questions, error_message).
+
+    On success: (list_of_questions, None).
+    On failure: (None, user_friendly_error_string).
+    """
     if not os.path.exists(QUESTIONS_FILE):
         return None, (
             "Question bank not found: questions.json\n\n"
@@ -341,6 +376,11 @@ def _load_questions():
 
 
 def _pick(questions, count, username):
+    """Select `count` random questions, weighted by the user's feedback history.
+
+    Questions the user liked are 1.5x more likely to appear; disliked questions
+    are 0.3x as likely. Questions with no feedback have a weight of 1.0.
+    """
     feedback = _load_feedback().get(username, {})
     weights = []
     for question in questions:
@@ -364,6 +404,7 @@ def _pick(questions, count, username):
 # ── Scores (Fernet AES encryption) ──────────────────────────────────────────
 
 def _get_fernet():
+    """Load (or create on first run) the Fernet encryption key for the scores file."""
     if os.path.exists(SCORES_KEY_FILE):
         with open(SCORES_KEY_FILE, "rb") as f:
             key = f.read().strip()
@@ -375,6 +416,7 @@ def _get_fernet():
 
 
 def _load_scores():
+    """Decrypt and load the scores file. Returns {} if the file doesn't exist or can't be read."""
     if not os.path.exists(SCORES_FILE):
         return {}
     try:
@@ -387,6 +429,7 @@ def _load_scores():
 
 
 def _save_scores(data):
+    """Encrypt and save scores to disk. Writes to a temp file first for crash safety."""
     token = _get_fernet().encrypt(json.dumps(data).encode())
     tmp = SCORES_FILE + ".tmp"
     with open(tmp, "wb") as f:
@@ -395,6 +438,7 @@ def _save_scores(data):
 
 
 def _record_score(user, score, max_pts, correct, wrong, total):
+    """Append a completed quiz result to the user's score history."""
     scores = _load_scores()
     if user not in scores:
         scores[user] = {"quizzes": [], "total_quizzes": 0, "total_correct": 0, "total_wrong": 0}
@@ -410,6 +454,7 @@ def _record_score(user, score, max_pts, correct, wrong, total):
 
 
 def _stats(user):
+    """Calculate aggregate stats for a user: quizzes taken, avg/best score, totals."""
     scores = _load_scores()
     user_data = scores.get(user)
     if not user_data or user_data["total_quizzes"] == 0:
@@ -428,6 +473,7 @@ def _stats(user):
 # ── Feedback ─────────────────────────────────────────────────────────────────
 
 def _load_feedback():
+    """Load user feedback from feedback.json. Returns {} if the file doesn't exist."""
     if not os.path.exists(FEEDBACK_FILE):
         return {}
     try:
@@ -438,6 +484,7 @@ def _load_feedback():
 
 
 def _save_feedback(data):
+    """Save feedback to disk. Writes to a temp file first for crash safety."""
     tmp = FEEDBACK_FILE + ".tmp"
     with open(tmp, "w") as f:
         json.dump(data, f, indent=2)
@@ -445,6 +492,7 @@ def _save_feedback(data):
 
 
 def _record_feedback(user, question_text, value):
+    """Save a user's feedback ("liked", "disliked", or "neutral") for a question."""
     data = _load_feedback()
     data.setdefault(user, {})[question_text] = value
     _save_feedback(data)
@@ -453,6 +501,7 @@ def _record_feedback(user, question_text, value):
 # ── Screens ──────────────────────────────────────────────────────────────────
 
 def _screen_greeting():
+    """Display the welcome screen shown when the app first launches."""
     _clear()
     _header("Python Quiz App")
     print(f"  {_Style.WHITE}Welcome to the Python Quiz App!{_Style.RST}")
@@ -463,6 +512,7 @@ def _screen_greeting():
 
 
 def _screen_auth():
+    """Show the Log In / Create Account / Quit menu. Returns a username, or None to quit."""
     while True:
         header = [
             "",
@@ -486,6 +536,7 @@ def _screen_auth():
 
 
 def _screen_login():
+    """Handle the login flow. Returns a username on success, or None to go back."""
     _clear()
     _header("Log In")
     print(f"  {_Style.DIM}Leave username blank to go back.{_Style.RST}")
@@ -530,6 +581,7 @@ def _screen_login():
 
 
 def _screen_create(prefill=None):
+    """Handle the account creation flow. Returns a username on success, or None to go back."""
     _clear()
     _header("Create Account")
 
@@ -584,6 +636,7 @@ def _screen_create(prefill=None):
 
 
 def _screen_dashboard(username):
+    """Show the user's stats and a menu to start a quiz, log out, or quit."""
     stats = _stats(username)
     header = [
         "",
@@ -612,38 +665,42 @@ def _screen_dashboard(username):
 
 
 def _screen_setup(questions):
+    """Ask the user how many questions they want. Returns the count, or None to go back."""
     _clear()
     _header("New Quiz")
-    n = len(questions)
-    print(f"  {_Style.WHITE}Available questions: {_Style.CYAN}{n}{_Style.RST}")
-    print(f"  {_Style.DIM}Enter a number between 1 and {n}, or 'back' to return.{_Style.RST}")
+    available = len(questions)
+    print(f"  {_Style.WHITE}Available questions: {_Style.CYAN}{available}{_Style.RST}")
+    print(f"  {_Style.DIM}Enter a number between 1 and {available}, or 'back' to return.{_Style.RST}")
     print()
     while True:
-        ans = _safe_input(f"  {_Style.WHITE}How many questions? {_Style.RST}").strip()
-        if ans.lower() == "back":
+        answer = _safe_input(f"  {_Style.WHITE}How many questions? {_Style.RST}").strip()
+        if answer.lower() == "back":
             return None
         try:
-            v = int(ans)
-            if 1 <= v <= n:
-                return v
-            print(f"  {_Style.RED}Enter a number between 1 and {n}.{_Style.RST}")
+            count = int(answer)
+            if 1 <= count <= available:
+                return count
+            print(f"  {_Style.RED}Enter a number between 1 and {available}.{_Style.RST}")
         except ValueError:
             print(f"  {_Style.RED}Invalid input. Enter a number (e.g. 5) or 'back'.{_Style.RST}")
 
 
 # ── Quiz engine ──────────────────────────────────────────────────────────────
 
-def _run_quiz(username, quiz_qs):
-    """Returns (results_list, True) when the quiz finishes normally.
-    Raises KeyboardInterrupt if the user abandons mid-quiz."""
-    results = []
-    total = len(quiz_qs)
+def _run_quiz(username, quiz_questions):
+    """Run through each question, collect answers and feedback, return results.
 
-    for i, question in enumerate(quiz_qs):
+    Returns (results_list, True) when the quiz finishes normally.
+    Raises KeyboardInterrupt if the user abandons mid-quiz (score is NOT saved).
+    """
+    results = []
+    total = len(quiz_questions)
+
+    for i, question in enumerate(quiz_questions):
         _clear()
         difficulty = question.get("difficulty", "medium")
         diff_color = {"easy": _Style.GREEN, "medium": _Style.YELLOW, "hard": _Style.RED}.get(difficulty, _Style.WHITE)
-        points = DIFF_PTS.get(difficulty, 1)
+        points = DIFFICULTY_POINTS.get(difficulty, 1)
 
         print(f"\n  {_Style.CYAN}{_Style.BOLD}Question {i + 1} of {total}{_Style.RST}")
         print(f"  {diff_color}[{difficulty.upper()}]{_Style.RST} {_Style.DIM}\u00b7 {points} pt{'s' if points != 1 else ''} \u00b7 {question.get('category', 'General')}{_Style.RST}")
@@ -744,6 +801,7 @@ def _run_quiz(username, quiz_qs):
 
 
 def _screen_summary(results, username):
+    """Display the end-of-quiz score breakdown and save the result to the scores file."""
     _clear()
     total_earned = sum(result["earned"] for result in results)
     total_possible = sum(result["possible"] for result in results)
@@ -781,6 +839,7 @@ def _screen_summary(results, username):
 
 
 def _screen_post_quiz():
+    """Ask the user whether to return to the dashboard or redo the quiz."""
     print()
     print(f"  {_Style.WHITE}What would you like to do next?{_Style.RST}")
     print()
@@ -790,6 +849,7 @@ def _screen_post_quiz():
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
+    """Entry point. Runs the greeting → auth → dashboard → quiz loop."""
     atexit.register(_show_cursor)
 
     try:
@@ -828,9 +888,9 @@ def main():
                         continue
 
                     while True:
-                        quiz_qs = _pick(questions, count, username)
+                        quiz_questions = _pick(questions, count, username)
                         try:
-                            results, _ = _run_quiz(username, quiz_qs)
+                            results, _ = _run_quiz(username, quiz_questions)
                         except KeyboardInterrupt:
                             _clear()
                             print(f"\n  {_Style.YELLOW}Quiz interrupted. Your progress was not saved.{_Style.RST}")
@@ -841,8 +901,8 @@ def main():
                             break
 
                         _screen_summary(results, username)
-                        post = _screen_post_quiz()
-                        if post == 0:
+                        post_choice = _screen_post_quiz()
+                        if post_choice == 0:
                             break
 
         _clear()
