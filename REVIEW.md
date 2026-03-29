@@ -222,18 +222,48 @@ Lines 500–502: returning `None` kicks the user back to the "Log In / Create Ac
 
 ## Fixes Log
 
-### Fixed using Claude Opus & Sonnet
+> All fixes were applied after the initial review. Original verdicts are preserved above unchanged.
 
-The following issues from the review were addressed after the initial review was written.
+---
 
-| # | Original Verdict | Fix |
-|---|-----------------|-----|
-| 8 | **FAIL** | `.gitignore` created covering `users.db`, `scores.json`, `feedback.json`, `.scores.key`, and `__pycache__/` |
-| 9 | **FAIL** | `git rm -r --cached __pycache__/` removed the bytecode file from git tracking (file stays on disk) |
-| 10 | **WARN** | Replaced `base64 + zlib` obfuscation with `cryptography.Fernet` (AES-128-CBC + HMAC). A random key is auto-generated on first run and saved to `.scores.key` — also added to `.gitignore` |
-| 11 | **WARN** | Replaced `hashlib.sha256` single-pass with `hashlib.pbkdf2_hmac("sha256", ...)` at 600,000 iterations (OWASP 2023 recommendation). stdlib-only, no new dependency |
-| 12 | **WARN** | Added `_check_password()` enforcing min 8 chars, 1 uppercase, 1 lowercase, 1 digit. Requirements shown as a hint before the password prompt |
+### Security & Git Hygiene
 
-`requirements.txt` was created with the `cryptography` dependency. `README.md` was updated to include the `pip install -r requirements.txt` step and document the new `.scores.key` file.
+| # | Original Verdict | What was wrong | What was done |
+|---|-----------------|----------------|---------------|
+| 8 | **FAIL** | No `.gitignore` existed | Created `.gitignore` covering `users.db`, `scores.json`, `feedback.json`, `.scores.key`, and `__pycache__/` |
+| 9 | **FAIL** | `__pycache__/main.cpython-313.pyc` was already committed | Ran `git rm -r --cached __pycache__/` to remove it from git tracking without deleting it from disk |
+| 10 | **WARN** | `base64 + zlib` is trivially reversible obfuscation | Replaced with `cryptography.Fernet` (AES-128-CBC + HMAC). Key auto-generated on first run, stored in `.scores.key`, added to `.gitignore` |
+| 11 | **WARN** | Single-pass `sha256` is fast and brute-force-friendly | Upgraded to `hashlib.pbkdf2_hmac("sha256", ...)` with 600,000 iterations — stdlib-only, no new dependency needed |
+| 12 | **WARN** | Any non-empty string was accepted as a password | Added `_check_password()` enforcing min 8 chars, 1 uppercase, 1 lowercase, 1 digit. Requirements shown as a hint before the password prompt |
 
-**Note:** Because the password hashing algorithm changed (#11), any accounts created before this fix will fail to verify. Delete `users.db` to start fresh. Similarly, delete `scores.json` if it exists — the old format is not readable by the new Fernet decryptor.
+**Side effects of this batch:** `requirements.txt` was created with the `cryptography` dependency. `README.md` was updated with the `pip install -r requirements.txt` step and a note about `.scores.key`.
+
+> **Important:** The password hashing algorithm changed in fix #11. Any accounts created before this fix will fail to verify — delete `users.db` to start fresh. The scores file format also changed in fix #10 — delete `scores.json` if one exists from before this fix.
+
+---
+
+### Bugs & Logic Errors
+
+| # | Original Verdict | What was wrong | What was done |
+|---|-----------------|----------------|---------------|
+| 13 | **WARN** | `os.system("clear")` spawns a full shell subprocess just to clear the screen | Replaced with `sys.stdout.write("\033[2J\033[H")` — writes the ANSI clear-screen escape code directly to the terminal, no subprocess needed |
+| 14 | **WARN** | Short answer comparison was exact-match only, so `"len()"` would be marked wrong | Added an `alternatives` field to the question JSON format. `_run_quiz` now checks the user's answer against both `answer` and any listed `alternatives`. The `len` question now lists `"len()"` as an accepted alternative |
+| 15 | **WARN** | "Redo This Quiz" replayed the exact same questions in the same order | Moved `_pick()` inside the redo loop so every redo draws a fresh random selection, re-weighted by the user's latest feedback |
+| 16 | **WARN** | Writing directly to `scores.json` / `feedback.json` could corrupt the file if interrupted mid-write | Both save functions now write to a `.tmp` file first, then use `os.replace()` to atomically swap it in. If anything goes wrong during writing, the original file is untouched |
+
+---
+
+### Code Quality
+
+| # | Original Verdict | What was wrong | What was done |
+|---|-----------------|----------------|---------------|
+| 17 | **WARN** | Terse/cryptic variable and function names throughout the codebase | Renamed across the entire file: `_C` → `_Style`, `_hash_pw` → `_hash_password`, `_load_fb/save_fb/record_fb` → `_load_feedback/save_feedback/record_feedback`. Local variables updated function by function: `sc`→`scores`, `u`→`user_data`, `mx`→`max_pts`, `te/tp`→`total_earned/total_possible`, `nc/nw`→`num_correct/num_wrong`, `pct`→`percentage`, `q`→`question`, `diff`→`difficulty`, `dc`→`diff_color`, `pts`→`points`, `exp`→`explanation`, `we`→`wrong_explanation`, `fb_idx`→`feedback_choice`, `st`→`stats`, `hdr`→`header`, `ch`→`choice`, `r`→`result`, `o`→`option`, `ln`→`line`, `k`→`key`, `n`→`num_options`, `w`→`active_weights`, `pl/pr`→`pad_left/pad_right` |
+
+---
+
+### UX Issues
+
+| # | Original Verdict | What was wrong | What was done |
+|---|-----------------|----------------|---------------|
+| 26 | **WARN** | No way to go back from username/password input prompts | Added "Leave blank to go back" hints in both `_screen_login` and `_screen_create`. Submitting an empty username or password now silently returns to the previous screen instead of showing an error |
+| 27 | **WARN** | Wrong password kicked the user back to the main auth menu | Wrapped password entry in a retry loop. On wrong password, an arrow-key menu offers "Try again" or "Go back". Choosing "Try again" re-shows the login screen with the username pre-filled so the user doesn't have to retype it |

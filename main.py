@@ -40,7 +40,7 @@ DIFF_PTS = {"easy": 1, "medium": 2, "hard": 3}
 
 # ── ANSI helpers ─────────────────────────────────────────────────────────────
 
-class _C:
+class _Style:
     RST = "\033[0m"
     BOLD = "\033[1m"
     DIM = "\033[2m"
@@ -113,39 +113,39 @@ def _get_key():
 
 def _inline_select(options, selected=0):
     """Arrow-key menu rendered inline (no screen clear)."""
-    n = len(options)
-    total = n + 2
+    num_options = len(options)
+    total_lines = num_options + 2
 
     def _draw():
-        for i, o in enumerate(options):
+        for i, option in enumerate(options):
             if i == selected:
-                print(f"    {_C.CYAN}{_C.BOLD}\u25b8 {o}{_C.RST}")
+                print(f"    {_Style.CYAN}{_Style.BOLD}\u25b8 {option}{_Style.RST}")
             else:
-                print(f"      {_C.DIM}{o}{_C.RST}")
+                print(f"      {_Style.DIM}{option}{_Style.RST}")
         print()
-        print(f"    {_C.GRAY}\u2191/\u2193 to navigate \u00b7 Enter to select{_C.RST}")
+        print(f"    {_Style.GRAY}\u2191/\u2193 to navigate \u00b7 Enter to select{_Style.RST}")
 
     _hide_cursor()
     try:
         _draw()
         while True:
-            k = _get_key()
-            if k == "ctrl_c":
+            key = _get_key()
+            if key == "ctrl_c":
                 raise KeyboardInterrupt
             moved = False
-            if k == "up" and selected > 0:
+            if key == "up" and selected > 0:
                 selected -= 1
                 moved = True
-            elif k == "down" and selected < n - 1:
+            elif key == "down" and selected < num_options - 1:
                 selected += 1
                 moved = True
-            elif k == "enter":
+            elif key == "enter":
                 return selected
             if moved:
-                sys.stdout.write(f"\033[{total}A")
-                for _ in range(total):
+                sys.stdout.write(f"\033[{total_lines}A")
+                for _ in range(total_lines):
                     sys.stdout.write("\033[2K\n")
-                sys.stdout.write(f"\033[{total}A")
+                sys.stdout.write(f"\033[{total_lines}A")
                 _draw()
     finally:
         _show_cursor()
@@ -157,31 +157,31 @@ def _fullscreen_menu(options, header_lines=None, selected=0):
     def _draw():
         _clear()
         if header_lines:
-            for ln in header_lines:
-                print(ln)
+            for line in header_lines:
+                print(line)
             print()
-        for i, o in enumerate(options):
+        for i, option in enumerate(options):
             if i == selected:
-                print(f"    {_C.CYAN}{_C.BOLD}\u25b8 {o}{_C.RST}")
+                print(f"    {_Style.CYAN}{_Style.BOLD}\u25b8 {option}{_Style.RST}")
             else:
-                print(f"      {_C.DIM}{o}{_C.RST}")
+                print(f"      {_Style.DIM}{option}{_Style.RST}")
         print()
-        print(f"    {_C.GRAY}\u2191/\u2193 to navigate \u00b7 Enter to select{_C.RST}")
+        print(f"    {_Style.GRAY}\u2191/\u2193 to navigate \u00b7 Enter to select{_Style.RST}")
 
     _hide_cursor()
     try:
         _draw()
         while True:
-            k = _get_key()
-            if k == "ctrl_c":
+            key = _get_key()
+            if key == "ctrl_c":
                 raise KeyboardInterrupt
-            if k == "up" and selected > 0:
+            if key == "up" and selected > 0:
                 selected -= 1
                 _draw()
-            elif k == "down" and selected < len(options) - 1:
+            elif key == "down" and selected < len(options) - 1:
                 selected += 1
                 _draw()
-            elif k == "enter":
+            elif key == "enter":
                 return selected
     finally:
         _show_cursor()
@@ -229,7 +229,7 @@ def _masked_input(prompt):
 
 
 def _wait(msg="Press Enter or Space to continue\u2026"):
-    print(f"\n  {_C.GRAY}{msg}{_C.RST}")
+    print(f"\n  {_Style.GRAY}{msg}{_Style.RST}")
     while True:
         k = _get_key()
         if k in ("enter", "space"):
@@ -239,16 +239,16 @@ def _wait(msg="Press Enter or Space to continue\u2026"):
 
 
 def _header(title):
-    w = max(len(title) + 6, 40)
-    pl = (w - len(title)) // 2
-    pr = w - pl - len(title)
-    print(f"\n  {_C.CYAN}\u2554{'\u2550' * w}\u2557{_C.RST}")
-    print(f"  {_C.CYAN}\u2551{' ' * pl}{_C.BOLD}{title}{_C.RST}{_C.CYAN}{' ' * pr}\u2551{_C.RST}")
-    print(f"  {_C.CYAN}\u255a{'\u2550' * w}\u255d{_C.RST}\n")
+    width = max(len(title) + 6, 40)
+    pad_left = (width - len(title)) // 2
+    pad_right = width - pad_left - len(title)
+    print(f"\n  {_Style.CYAN}\u2554{'\u2550' * width}\u2557{_Style.RST}")
+    print(f"  {_Style.CYAN}\u2551{' ' * pad_left}{_Style.BOLD}{title}{_Style.RST}{_Style.CYAN}{' ' * pad_right}\u2551{_Style.RST}")
+    print(f"  {_Style.CYAN}\u255a{'\u2550' * width}\u255d{_Style.RST}\n")
 
 
 def _divider():
-    print(f"  {_C.DIM}{'\u2500' * 44}{_C.RST}")
+    print(f"  {_Style.DIM}{'\u2500' * 44}{_Style.RST}")
 
 
 # ── Database (users) ─────────────────────────────────────────────────────────
@@ -269,7 +269,7 @@ def _init_db():
 
 _PBKDF2_ITERATIONS = 600_000
 
-def _hash_pw(pw, salt=None):
+def _hash_password(pw, salt=None):
     if salt is None:
         salt = secrets.token_hex(16)
     h = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt.encode(), _PBKDF2_ITERATIONS)
@@ -291,10 +291,10 @@ def _check_password(pw):
 def _db_create(username, password):
     conn = sqlite3.connect(DB_FILE)
     try:
-        h, s = _hash_pw(password)
+        pw_hash, salt = _hash_password(password)
         conn.execute(
             "INSERT INTO users (username,password_hash,salt,created_at) VALUES (?,?,?,?)",
-            (username, h, s, datetime.now().isoformat()),
+            (username, pw_hash, salt, datetime.now().isoformat()),
         )
         conn.commit()
         return True, "Account created successfully!"
@@ -312,8 +312,8 @@ def _db_verify(username, password):
     conn.close()
     if row is None:
         return False, "not_found"
-    h, _ = _hash_pw(password, row[1])
-    return (True, "ok") if h == row[0] else (False, "wrong_pw")
+    pw_hash, _ = _hash_password(password, row[1])
+    return (True, "ok") if pw_hash == row[0] else (False, "wrong_pw")
 
 
 # ── Questions ────────────────────────────────────────────────────────────────
@@ -330,33 +330,33 @@ def _load_questions():
             data = json.load(f)
     except json.JSONDecodeError as exc:
         return None, f"Invalid JSON in questions.json:\n  {exc}\n\n  Please fix the file and try again."
-    qs = data.get("questions", [])
-    if not qs:
+    questions = data.get("questions", [])
+    if not questions:
         return None, (
             "The question bank is empty!\n\n"
             "  Add questions to 'questions.json' to get started.\n"
             "  See README.md for the expected format."
         )
-    return qs, None
+    return questions, None
 
 
 def _pick(questions, count, username):
-    fb = _load_fb().get(username, {})
+    feedback = _load_feedback().get(username, {})
     weights = []
-    for q in questions:
-        val = fb.get(q["question"], "neutral")
-        weights.append({"liked": 1.5, "disliked": 0.3}.get(val, 1.0))
+    for question in questions:
+        feedback_value = feedback.get(question["question"], "neutral")
+        weights.append({"liked": 1.5, "disliked": 0.3}.get(feedback_value, 1.0))
     count = min(count, len(questions))
     pool = list(range(len(questions)))
-    w = list(weights)
+    active_weights = list(weights)
     chosen = []
     for _ in range(count):
         if not pool:
             break
-        idx = random.choices(range(len(pool)), weights=w, k=1)[0]
+        idx = random.choices(range(len(pool)), weights=active_weights, k=1)[0]
         chosen.append(questions[pool[idx]])
         pool.pop(idx)
-        w.pop(idx)
+        active_weights.pop(idx)
     random.shuffle(chosen)
     return chosen
 
@@ -394,40 +394,40 @@ def _save_scores(data):
     os.replace(tmp, SCORES_FILE)
 
 
-def _record_score(user, score, mx, correct, wrong, total):
-    sc = _load_scores()
-    if user not in sc:
-        sc[user] = {"quizzes": [], "total_quizzes": 0, "total_correct": 0, "total_wrong": 0}
-    u = sc[user]
-    u["quizzes"].append({
+def _record_score(user, score, max_pts, correct, wrong, total):
+    scores = _load_scores()
+    if user not in scores:
+        scores[user] = {"quizzes": [], "total_quizzes": 0, "total_correct": 0, "total_wrong": 0}
+    user_data = scores[user]
+    user_data["quizzes"].append({
         "date": datetime.now().isoformat(),
-        "score": score, "max": mx, "correct": correct, "wrong": wrong, "total": total,
+        "score": score, "max": max_pts, "correct": correct, "wrong": wrong, "total": total,
     })
-    u["total_quizzes"] += 1
-    u["total_correct"] += correct
-    u["total_wrong"] += wrong
-    _save_scores(sc)
+    user_data["total_quizzes"] += 1
+    user_data["total_correct"] += correct
+    user_data["total_wrong"] += wrong
+    _save_scores(scores)
 
 
 def _stats(user):
-    sc = _load_scores()
-    u = sc.get(user)
-    if not u or u["total_quizzes"] == 0:
-        return {"n": 0, "correct": 0, "wrong": 0, "avg": 0.0, "best": 0.0}
-    qs = u["quizzes"]
-    ts = sum(q["score"] for q in qs)
-    tm = sum(q["max"] for q in qs)
-    avg = (ts / tm * 100) if tm else 0
-    best = max((q["score"] / q["max"] * 100) if q["max"] else 0 for q in qs)
+    scores = _load_scores()
+    user_data = scores.get(user)
+    if not user_data or user_data["total_quizzes"] == 0:
+        return {"quizzes_taken": 0, "correct": 0, "wrong": 0, "avg": 0.0, "best": 0.0}
+    quiz_history = user_data["quizzes"]
+    total_score = sum(q["score"] for q in quiz_history)
+    total_max = sum(q["max"] for q in quiz_history)
+    avg = (total_score / total_max * 100) if total_max else 0
+    best = max((q["score"] / q["max"] * 100) if q["max"] else 0 for q in quiz_history)
     return {
-        "n": u["total_quizzes"], "correct": u["total_correct"],
-        "wrong": u["total_wrong"], "avg": round(avg, 1), "best": round(best, 1),
+        "quizzes_taken": user_data["total_quizzes"], "correct": user_data["total_correct"],
+        "wrong": user_data["total_wrong"], "avg": round(avg, 1), "best": round(best, 1),
     }
 
 
 # ── Feedback ─────────────────────────────────────────────────────────────────
 
-def _load_fb():
+def _load_feedback():
     if not os.path.exists(FEEDBACK_FILE):
         return {}
     try:
@@ -437,17 +437,17 @@ def _load_fb():
         return {}
 
 
-def _save_fb(data):
+def _save_feedback(data):
     tmp = FEEDBACK_FILE + ".tmp"
     with open(tmp, "w") as f:
         json.dump(data, f, indent=2)
     os.replace(tmp, FEEDBACK_FILE)
 
 
-def _record_fb(user, question_text, value):
-    data = _load_fb()
+def _record_feedback(user, question_text, value):
+    data = _load_feedback()
     data.setdefault(user, {})[question_text] = value
-    _save_fb(data)
+    _save_feedback(data)
 
 
 # ── Screens ──────────────────────────────────────────────────────────────────
@@ -455,8 +455,8 @@ def _record_fb(user, question_text, value):
 def _screen_greeting():
     _clear()
     _header("Python Quiz App")
-    print(f"  {_C.WHITE}Welcome to the Python Quiz App!{_C.RST}")
-    print(f"  {_C.DIM}Test your Python knowledge with interactive quizzes.{_C.RST}")
+    print(f"  {_Style.WHITE}Welcome to the Python Quiz App!{_Style.RST}")
+    print(f"  {_Style.DIM}Test your Python knowledge with interactive quizzes.{_Style.RST}")
     print()
     _divider()
     _wait()
@@ -464,23 +464,23 @@ def _screen_greeting():
 
 def _screen_auth():
     while True:
-        hdr = [
+        header = [
             "",
-            f"  {_C.CYAN}{_C.BOLD}\u2554{'=' * 42}\u2557{_C.RST}",
-            f"  {_C.CYAN}{_C.BOLD}\u2551{'Python Quiz App':^42}\u2551{_C.RST}",
-            f"  {_C.CYAN}{_C.BOLD}\u255a{'=' * 42}\u255d{_C.RST}",
+            f"  {_Style.CYAN}{_Style.BOLD}\u2554{'=' * 42}\u2557{_Style.RST}",
+            f"  {_Style.CYAN}{_Style.BOLD}\u2551{'Python Quiz App':^42}\u2551{_Style.RST}",
+            f"  {_Style.CYAN}{_Style.BOLD}\u255a{'=' * 42}\u255d{_Style.RST}",
             "",
-            f"  {_C.WHITE}What would you like to do?{_C.RST}",
+            f"  {_Style.WHITE}What would you like to do?{_Style.RST}",
         ]
-        ch = _fullscreen_menu(["Log In", "Create Account", "Quit"], header_lines=hdr)
-        if ch == 0:
-            r = _screen_login()
-            if r:
-                return r
-        elif ch == 1:
-            r = _screen_create()
-            if r:
-                return r
+        choice = _fullscreen_menu(["Log In", "Create Account", "Quit"], header_lines=header)
+        if choice == 0:
+            result = _screen_login()
+            if result:
+                return result
+        elif choice == 1:
+            result = _screen_create()
+            if result:
+                return result
         else:
             return None
 
@@ -488,40 +488,45 @@ def _screen_auth():
 def _screen_login():
     _clear()
     _header("Log In")
+    print(f"  {_Style.DIM}Leave username blank to go back.{_Style.RST}")
+    print()
 
-    username = _safe_input(f"  {_C.WHITE}Username: {_C.RST}").strip()
+    username = _safe_input(f"  {_Style.WHITE}Username: {_Style.RST}").strip()
     if not username:
-        print(f"\n  {_C.RED}Username cannot be empty.{_C.RST}")
-        _wait()
         return None
 
-    password = _masked_input(f"  {_C.WHITE}Password: {_C.RST}")
-    if not password:
-        print(f"\n  {_C.RED}Password cannot be empty.{_C.RST}")
-        _wait()
-        return None
+    while True:
+        password = _masked_input(f"  {_Style.WHITE}Password: {_Style.RST}")
+        if not password:
+            return None
 
-    ok, code = _db_verify(username, password)
-    if ok:
-        print(f"\n  {_C.GREEN}{_C.BOLD}\u2713 Welcome back, {username}!{_C.RST}")
-        _wait()
-        return username
+        success, error_code = _db_verify(username, password)
+        if success:
+            print(f"\n  {_Style.GREEN}{_Style.BOLD}\u2713 Welcome back, {username}!{_Style.RST}")
+            _wait()
+            return username
 
-    if code == "not_found":
+        if error_code == "not_found":
+            _clear()
+            _header("Account Not Found")
+            print(f"  {_Style.RED}No account exists with username '{username}'.{_Style.RST}")
+            print()
+            print(f"  {_Style.YELLOW}Would you like to create an account instead?{_Style.RST}")
+            print()
+            choice = _inline_select(["Yes, create an account", "No, go back"])
+            if choice == 0:
+                return _screen_create(prefill=username)
+            return None
+
+        print(f"\n  {_Style.RED}\u2717 Incorrect password.{_Style.RST}")
+        print()
+        choice = _inline_select(["Try again", "Go back"])
+        if choice == 1:
+            return None
         _clear()
-        _header("Account Not Found")
-        print(f"  {_C.RED}No account exists with username '{username}'.{_C.RST}")
+        _header("Log In")
+        print(f"  {_Style.DIM}Username: {_Style.CYAN}{username}{_Style.RST}")
         print()
-        print(f"  {_C.YELLOW}Would you like to create an account instead?{_C.RST}")
-        print()
-        ch = _inline_select(["Yes, create an account", "No, go back"])
-        if ch == 0:
-            return _screen_create(prefill=username)
-        return None
-
-    print(f"\n  {_C.RED}\u2717 Invalid password. Please try again.{_C.RST}")
-    _wait()
-    return None
 
 
 def _screen_create(prefill=None):
@@ -530,97 +535,100 @@ def _screen_create(prefill=None):
 
     if prefill:
         username = prefill
-        print(f"  {_C.WHITE}Username: {_C.CYAN}{username}{_C.RST}")
+        print(f"  {_Style.WHITE}Username: {_Style.CYAN}{username}{_Style.RST}")
     else:
-        username = _safe_input(f"  {_C.WHITE}Username: {_C.RST}").strip()
+        print(f"  {_Style.DIM}Leave username blank to go back.{_Style.RST}")
+        print()
+        username = _safe_input(f"  {_Style.WHITE}Username: {_Style.RST}").strip()
         if not username:
-            print(f"\n  {_C.RED}Username cannot be empty.{_C.RST}")
-            _wait()
             return None
 
-    print(f"  {_C.DIM}Min 8 chars, 1 uppercase, 1 lowercase, 1 digit{_C.RST}")
-    password = _masked_input(f"  {_C.WHITE}Password: {_C.RST}")
+    print(f"  {_Style.DIM}Password: min 8 chars, 1 uppercase, 1 lowercase, 1 digit{_Style.RST}")
+    print(f"  {_Style.DIM}Leave password blank to go back.{_Style.RST}")
+    password = _masked_input(f"  {_Style.WHITE}Password: {_Style.RST}")
+    if not password:
+        return None
 
     pw_err = _check_password(password)
     if pw_err:
-        print(f"\n  {_C.RED}{pw_err}{_C.RST}")
+        print(f"\n  {_Style.RED}{pw_err}{_Style.RST}")
         _wait()
         return None
 
-    confirm = _masked_input(f"  {_C.WHITE}Confirm:  {_C.RST}")
+    confirm = _masked_input(f"  {_Style.WHITE}Confirm:  {_Style.RST}")
     if password != confirm:
-        print(f"\n  {_C.RED}\u2717 Passwords do not match.{_C.RST}")
+        print(f"\n  {_Style.RED}\u2717 Passwords do not match.{_Style.RST}")
         _wait()
         return None
 
     _clear()
     _header("Confirm Account")
-    print(f"  {_C.WHITE}Username:{_C.RST}  {_C.CYAN}{username}{_C.RST}")
-    print(f"  {_C.WHITE}Password:{_C.RST}  {_C.CYAN}{'\u2022' * min(len(password), 12)}{_C.RST}")
+    print(f"  {_Style.WHITE}Username:{_Style.RST}  {_Style.CYAN}{username}{_Style.RST}")
+    print(f"  {_Style.WHITE}Password:{_Style.RST}  {_Style.CYAN}{'\u2022' * min(len(password), 12)}{_Style.RST}")
     print()
-    print(f"  {_C.YELLOW}Is this correct?{_C.RST}")
+    print(f"  {_Style.YELLOW}Is this correct?{_Style.RST}")
     print()
-    ch = _inline_select(["Yes, create my account", "No, take me back"])
-    if ch == 1:
+    choice = _inline_select(["Yes, create my account", "No, take me back"])
+    if choice == 1:
         return None
 
-    ok, msg = _db_create(username, password)
-    if ok:
-        print(f"\n  {_C.GREEN}{_C.BOLD}\u2713 {msg}{_C.RST}")
+    success, message = _db_create(username, password)
+    if success:
+        print(f"\n  {_Style.GREEN}{_Style.BOLD}\u2713 {message}{_Style.RST}")
         _wait()
         return username
 
-    print(f"\n  {_C.RED}\u2717 {msg}{_C.RST}")
+    print(f"\n  {_Style.RED}\u2717 {message}{_Style.RST}")
     _wait()
     return None
 
 
 def _screen_dashboard(username):
-    st = _stats(username)
-    hdr = [
+    stats = _stats(username)
+    header = [
         "",
-        f"  {_C.CYAN}{_C.BOLD}\u2554{'=' * 42}\u2557{_C.RST}",
-        f"  {_C.CYAN}{_C.BOLD}\u2551{'Dashboard':^42}\u2551{_C.RST}",
-        f"  {_C.CYAN}{_C.BOLD}\u255a{'=' * 42}\u255d{_C.RST}",
+        f"  {_Style.CYAN}{_Style.BOLD}\u2554{'=' * 42}\u2557{_Style.RST}",
+        f"  {_Style.CYAN}{_Style.BOLD}\u2551{'Dashboard':^42}\u2551{_Style.RST}",
+        f"  {_Style.CYAN}{_Style.BOLD}\u255a{'=' * 42}\u255d{_Style.RST}",
         "",
-        f"  {_C.WHITE}Welcome back, {_C.CYAN}{_C.BOLD}{username}{_C.RST}{_C.WHITE}!{_C.RST}",
+        f"  {_Style.WHITE}Welcome back, {_Style.CYAN}{_Style.BOLD}{username}{_Style.RST}{_Style.WHITE}!{_Style.RST}",
         "",
-        f"  {_C.WHITE}{_C.BOLD}Your Stats{_C.RST}",
-        f"  {_C.DIM}{'\u2500' * 30}{_C.RST}",
+        f"  {_Style.WHITE}{_Style.BOLD}Your Stats{_Style.RST}",
+        f"  {_Style.DIM}{'\u2500' * 30}{_Style.RST}",
     ]
-    if st["n"] == 0:
-        hdr.append(f"  {_C.DIM}No quizzes taken yet. Start one!{_C.RST}")
+    if stats["quizzes_taken"] == 0:
+        header.append(f"  {_Style.DIM}No quizzes taken yet. Start one!{_Style.RST}")
     else:
-        hdr += [
-            f"  {_C.WHITE}Quizzes Taken:  {_C.CYAN}{st['n']}{_C.RST}",
-            f"  {_C.WHITE}Average Score:  {_C.CYAN}{st['avg']}%{_C.RST}",
-            f"  {_C.WHITE}Best Score:     {_C.CYAN}{st['best']}%{_C.RST}",
-            f"  {_C.WHITE}Total Correct:  {_C.GREEN}{st['correct']}{_C.RST}",
-            f"  {_C.WHITE}Total Wrong:    {_C.RED}{st['wrong']}{_C.RST}",
+        header += [
+            f"  {_Style.WHITE}Quizzes Taken:  {_Style.CYAN}{stats['quizzes_taken']}{_Style.RST}",
+            f"  {_Style.WHITE}Average Score:  {_Style.CYAN}{stats['avg']}%{_Style.RST}",
+            f"  {_Style.WHITE}Best Score:     {_Style.CYAN}{stats['best']}%{_Style.RST}",
+            f"  {_Style.WHITE}Total Correct:  {_Style.GREEN}{stats['correct']}{_Style.RST}",
+            f"  {_Style.WHITE}Total Wrong:    {_Style.RED}{stats['wrong']}{_Style.RST}",
         ]
-    hdr += ["", f"  {_C.DIM}{'\u2500' * 30}{_C.RST}", ""]
-    ch = _fullscreen_menu(["Start New Quiz", "Log Out", "Quit"], header_lines=hdr)
-    return ["quiz", "logout", "quit"][ch]
+    header += ["", f"  {_Style.DIM}{'\u2500' * 30}{_Style.RST}", ""]
+    choice = _fullscreen_menu(["Start New Quiz", "Log Out", "Quit"], header_lines=header)
+    return ["quiz", "logout", "quit"][choice]
 
 
 def _screen_setup(questions):
     _clear()
     _header("New Quiz")
     n = len(questions)
-    print(f"  {_C.WHITE}Available questions: {_C.CYAN}{n}{_C.RST}")
-    print(f"  {_C.DIM}Enter a number between 1 and {n}, or 'back' to return.{_C.RST}")
+    print(f"  {_Style.WHITE}Available questions: {_Style.CYAN}{n}{_Style.RST}")
+    print(f"  {_Style.DIM}Enter a number between 1 and {n}, or 'back' to return.{_Style.RST}")
     print()
     while True:
-        ans = _safe_input(f"  {_C.WHITE}How many questions? {_C.RST}").strip()
+        ans = _safe_input(f"  {_Style.WHITE}How many questions? {_Style.RST}").strip()
         if ans.lower() == "back":
             return None
         try:
             v = int(ans)
             if 1 <= v <= n:
                 return v
-            print(f"  {_C.RED}Enter a number between 1 and {n}.{_C.RST}")
+            print(f"  {_Style.RED}Enter a number between 1 and {n}.{_Style.RST}")
         except ValueError:
-            print(f"  {_C.RED}Invalid input. Enter a number (e.g. 5) or 'back'.{_C.RST}")
+            print(f"  {_Style.RED}Invalid input. Enter a number (e.g. 5) or 'back'.{_Style.RST}")
 
 
 # ── Quiz engine ──────────────────────────────────────────────────────────────
@@ -631,150 +639,150 @@ def _run_quiz(username, quiz_qs):
     results = []
     total = len(quiz_qs)
 
-    for i, q in enumerate(quiz_qs):
+    for i, question in enumerate(quiz_qs):
         _clear()
-        diff = q.get("difficulty", "medium")
-        dc = {"easy": _C.GREEN, "medium": _C.YELLOW, "hard": _C.RED}.get(diff, _C.WHITE)
-        pts = DIFF_PTS.get(diff, 1)
+        difficulty = question.get("difficulty", "medium")
+        diff_color = {"easy": _Style.GREEN, "medium": _Style.YELLOW, "hard": _Style.RED}.get(difficulty, _Style.WHITE)
+        points = DIFF_PTS.get(difficulty, 1)
 
-        print(f"\n  {_C.CYAN}{_C.BOLD}Question {i + 1} of {total}{_C.RST}")
-        print(f"  {dc}[{diff.upper()}]{_C.RST} {_C.DIM}\u00b7 {pts} pt{'s' if pts != 1 else ''} \u00b7 {q.get('category', 'General')}{_C.RST}")
+        print(f"\n  {_Style.CYAN}{_Style.BOLD}Question {i + 1} of {total}{_Style.RST}")
+        print(f"  {diff_color}[{difficulty.upper()}]{_Style.RST} {_Style.DIM}\u00b7 {points} pt{'s' if points != 1 else ''} \u00b7 {question.get('category', 'General')}{_Style.RST}")
         print()
-        print(f"  {_C.WHITE}{_C.BOLD}{q['question']}{_C.RST}")
+        print(f"  {_Style.WHITE}{_Style.BOLD}{question['question']}{_Style.RST}")
         print()
         _divider()
         print()
 
-        qtype = q.get("type", "multiple_choice")
-        user_ans = None
+        question_type = question.get("type", "multiple_choice")
+        user_answer = None
 
-        if qtype == "multiple_choice":
-            opts = q["options"]
+        if question_type == "multiple_choice":
+            opts = question["options"]
             labels = [f"{chr(65 + j)}) {o}" for j, o in enumerate(opts)]
             idx = _inline_select(labels)
-            user_ans = opts[idx]
+            user_answer = opts[idx]
 
-        elif qtype == "true_false":
+        elif question_type == "true_false":
             idx = _inline_select(["True", "False"])
-            user_ans = ["true", "false"][idx]
+            user_answer = ["true", "false"][idx]
 
-        elif qtype == "short_answer":
-            user_ans = _safe_input(f"    {_C.WHITE}Your answer: {_C.RST}").strip()
+        elif question_type == "short_answer":
+            user_answer = _safe_input(f"    {_Style.WHITE}Your answer: {_Style.RST}").strip()
 
-        correct_ans = q["answer"]
-        accepted = [correct_ans] + q.get("alternatives", [])
-        typed = (user_ans or "").lower().strip()
+        correct_answer = question["answer"]
+        accepted = [correct_answer] + question.get("alternatives", [])
+        typed = (user_answer or "").lower().strip()
         is_correct = any(typed == a.lower().strip() for a in accepted)
 
         # ── Result screen ────────────────────────────────────────────────
         _clear()
-        print(f"\n  {_C.CYAN}{_C.BOLD}Question {i + 1} of {total}{_C.RST}")
-        print(f"  {_C.DIM}{q['question']}{_C.RST}")
+        print(f"\n  {_Style.CYAN}{_Style.BOLD}Question {i + 1} of {total}{_Style.RST}")
+        print(f"  {_Style.DIM}{question['question']}{_Style.RST}")
         print()
 
         if is_correct:
-            earned = pts
-            print(f"  {_C.GREEN}{_C.BOLD}\u2713 Correct!  +{pts} pt{'s' if pts != 1 else ''}{_C.RST}")
+            earned = points
+            print(f"  {_Style.GREEN}{_Style.BOLD}\u2713 Correct!  +{points} pt{'s' if points != 1 else ''}{_Style.RST}")
             print()
-            exp = q.get("explanation", "")
-            if exp:
-                print(f"  {_C.WHITE}{exp}{_C.RST}")
+            explanation = question.get("explanation", "")
+            if explanation:
+                print(f"  {_Style.WHITE}{explanation}{_Style.RST}")
         else:
             earned = 0
-            disp = (user_ans or "").capitalize() if qtype == "true_false" else (user_ans or "")
-            corr_disp = correct_ans.capitalize() if qtype == "true_false" else correct_ans
+            user_display = (user_answer or "").capitalize() if question_type == "true_false" else (user_answer or "")
+            correct_display = correct_answer.capitalize() if question_type == "true_false" else correct_answer
 
-            print(f"  {_C.RED}{_C.BOLD}\u2717 Incorrect{_C.RST}")
+            print(f"  {_Style.RED}{_Style.BOLD}\u2717 Incorrect{_Style.RST}")
             print()
-            print(f"  {_C.RED}Your answer:    {disp}{_C.RST}")
-            print(f"  {_C.GREEN}Correct answer: {corr_disp}{_C.RST}")
+            print(f"  {_Style.RED}Your answer:    {user_display}{_Style.RST}")
+            print(f"  {_Style.GREEN}Correct answer: {correct_display}{_Style.RST}")
             print()
 
-            we = q.get("wrong_explanations", {}).get(
-                user_ans, q.get("wrong_explanations", {}).get((user_ans or "").lower(), "")
+            wrong_explanation = question.get("wrong_explanations", {}).get(
+                user_answer, question.get("wrong_explanations", {}).get((user_answer or "").lower(), "")
             )
-            if not we:
-                we = q.get("wrong_explanation", "")
-            if we:
-                print(f"  {_C.RED}Why '{disp}' is wrong:{_C.RST}")
-                print(f"  {_C.WHITE}{we}{_C.RST}")
+            if not wrong_explanation:
+                wrong_explanation = question.get("wrong_explanation", "")
+            if wrong_explanation:
+                print(f"  {_Style.RED}Why '{user_display}' is wrong:{_Style.RST}")
+                print(f"  {_Style.WHITE}{wrong_explanation}{_Style.RST}")
                 print()
 
-            exp = q.get("explanation", "")
-            if exp:
-                print(f"  {_C.GREEN}Why '{corr_disp}' is correct:{_C.RST}")
-                print(f"  {_C.WHITE}{exp}{_C.RST}")
+            explanation = question.get("explanation", "")
+            if explanation:
+                print(f"  {_Style.GREEN}Why '{correct_display}' is correct:{_Style.RST}")
+                print(f"  {_Style.WHITE}{explanation}{_Style.RST}")
 
         results.append({
-            "question": q["question"],
-            "user_answer": user_ans,
-            "correct_answer": correct_ans,
+            "question": question["question"],
+            "user_answer": user_answer,
+            "correct_answer": correct_answer,
             "is_correct": is_correct,
             "earned": earned,
-            "possible": pts,
-            "difficulty": diff,
+            "possible": points,
+            "difficulty": difficulty,
         })
 
         _wait()
 
         # ── Feedback screen ──────────────────────────────────────────────
         _clear()
-        print(f"\n  {_C.CYAN}{_C.BOLD}Question {i + 1} Feedback{_C.RST}")
-        print(f"  {_C.DIM}{q['question']}{_C.RST}")
+        print(f"\n  {_Style.CYAN}{_Style.BOLD}Question {i + 1} Feedback{_Style.RST}")
+        print(f"  {_Style.DIM}{question['question']}{_Style.RST}")
         print()
-        print(f"  {_C.WHITE}How did you feel about this question?{_C.RST}")
+        print(f"  {_Style.WHITE}How did you feel about this question?{_Style.RST}")
         print()
 
-        fb_idx = _inline_select([
+        feedback_choice = _inline_select([
             "I liked this question.",
             "I did not like this question.",
             "I didn\u2019t mind this question.",
         ])
-        _record_fb(username, q["question"], {0: "liked", 1: "disliked", 2: "neutral"}[fb_idx])
+        _record_feedback(username, question["question"], {0: "liked", 1: "disliked", 2: "neutral"}[feedback_choice])
 
     return results, True
 
 
 def _screen_summary(results, username):
     _clear()
-    te = sum(r["earned"] for r in results)
-    tp = sum(r["possible"] for r in results)
-    nc = sum(1 for r in results if r["is_correct"])
-    nw = len(results) - nc
-    pct = (te / tp * 100) if tp else 0
+    total_earned = sum(result["earned"] for result in results)
+    total_possible = sum(result["possible"] for result in results)
+    num_correct = sum(1 for result in results if result["is_correct"])
+    num_wrong = len(results) - num_correct
+    percentage = (total_earned / total_possible * 100) if total_possible else 0
 
     _header("Quiz Complete!")
 
-    if pct >= 80:
-        print(f"  {_C.GREEN}{_C.BOLD}Excellent work!{_C.RST}")
-    elif pct >= 60:
-        print(f"  {_C.YELLOW}{_C.BOLD}Good effort!{_C.RST}")
+    if percentage >= 80:
+        print(f"  {_Style.GREEN}{_Style.BOLD}Excellent work!{_Style.RST}")
+    elif percentage >= 60:
+        print(f"  {_Style.YELLOW}{_Style.BOLD}Good effort!{_Style.RST}")
     else:
-        print(f"  {_C.RED}{_C.BOLD}Keep practicing!{_C.RST}")
+        print(f"  {_Style.RED}{_Style.BOLD}Keep practicing!{_Style.RST}")
     print()
-    print(f"  {_C.WHITE}Score: {_C.CYAN}{_C.BOLD}{te}/{tp}{_C.RST} {_C.DIM}({pct:.0f}%){_C.RST}")
-    print(f"  {_C.GREEN}Correct: {nc}{_C.RST}   {_C.RED}Wrong: {nw}{_C.RST}")
-    print()
-    _divider()
-    print()
-    print(f"  {_C.WHITE}{_C.BOLD}Breakdown:{_C.RST}")
-    print()
-
-    for r in results:
-        icon = f"{_C.GREEN}\u2713{_C.RST}" if r["is_correct"] else f"{_C.RED}\u2717{_C.RST}"
-        txt = r["question"][:45] + ("\u2026" if len(r["question"]) > 45 else "")
-        pt_s = f"+{r['earned']}" if r["is_correct"] else "+0"
-        print(f"  {icon} {_C.DIM}{txt}{_C.RST}")
-        print(f"    {_C.DIM}[{r['difficulty']}] {pt_s}{_C.RST}")
+    print(f"  {_Style.WHITE}Score: {_Style.CYAN}{_Style.BOLD}{total_earned}/{total_possible}{_Style.RST} {_Style.DIM}({percentage:.0f}%){_Style.RST}")
+    print(f"  {_Style.GREEN}Correct: {num_correct}{_Style.RST}   {_Style.RED}Wrong: {num_wrong}{_Style.RST}")
     print()
     _divider()
+    print()
+    print(f"  {_Style.WHITE}{_Style.BOLD}Breakdown:{_Style.RST}")
+    print()
 
-    _record_score(username, te, tp, nc, nw, len(results))
+    for result in results:
+        icon = f"{_Style.GREEN}\u2713{_Style.RST}" if result["is_correct"] else f"{_Style.RED}\u2717{_Style.RST}"
+        question_preview = result["question"][:45] + ("\u2026" if len(result["question"]) > 45 else "")
+        points_label = f"+{result['earned']}" if result["is_correct"] else "+0"
+        print(f"  {icon} {_Style.DIM}{question_preview}{_Style.RST}")
+        print(f"    {_Style.DIM}[{result['difficulty']}] {points_label}{_Style.RST}")
+    print()
+    _divider()
+
+    _record_score(username, total_earned, total_possible, num_correct, num_wrong, len(results))
 
 
 def _screen_post_quiz():
     print()
-    print(f"  {_C.WHITE}What would you like to do next?{_C.RST}")
+    print(f"  {_Style.WHITE}What would you like to do next?{_Style.RST}")
     print()
     return _inline_select(["Return to Dashboard", "Redo This Quiz"])
 
@@ -791,8 +799,8 @@ def main():
         if err:
             _clear()
             _header("Error")
-            for ln in err.split("\n"):
-                print(f"  {_C.RED}{ln}{_C.RST}")
+            for line in err.split("\n"):
+                print(f"  {_Style.RED}{line}{_Style.RST}")
             print()
             return
 
@@ -808,7 +816,7 @@ def main():
 
                 if action == "quit":
                     _clear()
-                    print(f"\n  {_C.CYAN}Goodbye, {username}! See you next time.{_C.RST}\n")
+                    print(f"\n  {_Style.CYAN}Goodbye, {username}! See you next time.{_Style.RST}\n")
                     return
 
                 if action == "logout":
@@ -825,7 +833,7 @@ def main():
                             results, _ = _run_quiz(username, quiz_qs)
                         except KeyboardInterrupt:
                             _clear()
-                            print(f"\n  {_C.YELLOW}Quiz interrupted. Your progress was not saved.{_C.RST}")
+                            print(f"\n  {_Style.YELLOW}Quiz interrupted. Your progress was not saved.{_Style.RST}")
                             try:
                                 _wait()
                             except KeyboardInterrupt:
@@ -838,12 +846,12 @@ def main():
                             break
 
         _clear()
-        print(f"\n  {_C.CYAN}Goodbye! Thanks for using Python Quiz App.{_C.RST}\n")
+        print(f"\n  {_Style.CYAN}Goodbye! Thanks for using Python Quiz App.{_Style.RST}\n")
 
     except KeyboardInterrupt:
         _show_cursor()
         _clear()
-        print(f"\n  {_C.CYAN}Goodbye! Thanks for using Python Quiz App.{_C.RST}\n")
+        print(f"\n  {_Style.CYAN}Goodbye! Thanks for using Python Quiz App.{_Style.RST}\n")
 
 
 if __name__ == "__main__":
