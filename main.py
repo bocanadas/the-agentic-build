@@ -607,7 +607,7 @@ def _screen_create(prefill=None):
         _wait()
         return None
 
-    confirm = _masked_input(f"  {_Style.WHITE}Confirm:  {_Style.RST}")
+    confirm = _masked_input(f"  {_Style.WHITE}Confirm password: {_Style.RST}").strip()
     if password != confirm:
         print(f"\n  {_Style.RED}\u2717 Passwords do not match.{_Style.RST}")
         _wait()
@@ -616,7 +616,7 @@ def _screen_create(prefill=None):
     _clear()
     _header("Confirm Account")
     print(f"  {_Style.WHITE}Username:{_Style.RST}  {_Style.CYAN}{username}{_Style.RST}")
-    print(f"  {_Style.WHITE}Password:{_Style.RST}  {_Style.CYAN}{'\u2022' * min(len(password), 12)}{_Style.RST}")
+    print(f"  {_Style.WHITE}Password:{_Style.RST}  {_Style.CYAN}{password}{_Style.RST}")
     print()
     print(f"  {_Style.YELLOW}Is this correct?{_Style.RST}")
     print()

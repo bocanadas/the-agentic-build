@@ -6,7 +6,11 @@ A command-line Python quiz application with a local login system, score tracking
 
 ```bash
 pip install -r requirements.txt
-python main.py
+
+python main.py 
+
+# If Python 3 installed 
+python3 main.py
 ```
 
 Requires Python 3.8+ and one external dependency (`cryptography`) for AES-encrypted score storage.
